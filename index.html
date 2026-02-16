@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EMS - Vue Question Manager</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<style>
+body {
+    font-family: Arial;
+    background: #f4f6f9;
+    margin: 0;
+}
+header {
+    background: #1e3a8a;
+    color: white;
+    padding: 15px 25px;
+    font-size: 18px;
+}
+.container {
+    width: 90%;
+    margin: 25px auto;
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+h3 {
+    border-left: 4px solid #1e3a8a;
+    padding-left: 10px;
+    color: #1e3a8a;
+}
+.row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+}
+.col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+input, select, textarea {
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+textarea { resize: vertical; }
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+th { background: #f1f1f1; }
+button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+.btn-add { background: #6b7280; color: white; }
+.btn-save { background: #16a34a; color: white; }
+.btn-remove { background: #dc2626; color: white; }
+.btn-action { margin:2px; background:#1e3a8a; color:white; }
+.save-message { text-align:center; color:green; margin:20px 0; }
+</style>
+</head>
+<body>
+
+<header>Examination Management System - Vue Question Manager</header>
+
+<div id="app" class="container">
+
+    <!-- Success Message -->
+    <div v-if="showMessage" class="save-message">
+        ✅ Question saved successfully!
+        <div style="margin-top:10px;">
+            <button @click="resetForm" class="btn-action">Add Another Question</button>
+        </div>
+    </div>
+
+    <!-- Question Form -->
+    <div v-if="!showMessage">
+    <form @submit.prevent="submitForm">
+
+        <h3>Subject (tbl_subjects)</h3>
+        <div class="row">
+            <div class="col">
+                <label>subject_code</label>
+                <input type="text" v-model="form.subject_code" required>
+            </div>
+            <div class="col">
+                <label>subject_name</label>
+                <input type="text" v-model="form.subject_name" required>
+            </div>
+            <div class="col">
+                <label>status</label>
+                <select v-model="form.subject_status">
+                    <option value="draft">draft</option>
+                    <option value="active">active</option>
+                    <option value="inactive">inactive</option>
+                    <option value="archived">archived</option>
+                </select>
+            </div>
+        </div>
+
+        <h3>Subject Detail (tbl_subject_details)</h3>
+        <div class="row">
+            <div class="col">
+                <label>year_id</label>
+                <select v-model="form.year_id">
+                    <option value="1">2024-2025</option>
+                    <option value="2">2025-2026</option>
+                </select>
+            </div>
+        </div>
+
+        <h3>Question (tbl_questions)</h3>
+        <div class="row">
+            <div class="col">
+                <label>question_text</label>
+                <textarea v-model="form.question_text" rows="3" required></textarea>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <label>score</label>
+                <input type="number" v-model.number="form.score">
+            </div>
+            <div class="col">
+                <label>question_type</label>
+                <select v-model="form.question_type">
+                    <option value="mcq">MCQ</option>
+                    <option value="true_false">True/False</option>
+                </select>
+            </div>
+            <div class="col">
+                <label>is_mandatory</label>
+                <select v-model="form.is_mandatory">
+                    <option value="1">Yes</option>
+                    <option value="0">No</option>
+                </select>
+            </div>
+            <div class="col">
+                <label>status</label>
+                <select v-model="form.question_status">
+                    <option value="draft">draft</option>
+                    <option value="active">active</option>
+                    <option value="inactive">inactive</option>
+                    <option value="archived">archived</option>
+                </select>
+            </div>
+        </div>
+
+        <h3>Options (tbl_options)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Order</th>
+                    <th>Text</th>
+                    <th>Correct</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="(option, index) in form.options" :key="option.id">
+                    <td>{{ index + 1 }}</td>
+                    <td><input type="text" v-model="option.text" required></td>
+                    <td style="text-align:center;">
+                        <input type="radio" :value="index" v-model="correctIndex">
+                    </td>
+                    <td>
+                        <button type="button" class="btn-remove" @click="removeOption(index)">Remove</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <button type="button" class="btn-add" @click="addOption">+ Add Option</button>
+
+        <div class="save-area">
+            <button type="submit" class="btn-save">SAVE ALL</button>
+        </div>
+    </form>
+    </div>
+
+    <!-- Question List -->
+    <div v-if="questionList.length > 0" style="margin-top:30px;">
+        <h3>All Questions</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Subject</th>
+                    <th>Question Text</th>
+                    <th>Score</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="(q, i) in questionList" :key="i">
+                    <td>{{ i + 1 }}</td>
+                    <td>{{ q.subject_name }}</td>
+                    <td>{{ q.question_text }}</td>
+                    <td>{{ q.score }}</td>
+                    <td>{{ q.question_type }}</td>
+                    <td>{{ q.question_status }}</td>
+                    <td>
+                        <button class="btn-action" @click="editQuestion(i)">Edit</button>
+                        <button class="btn-remove" @click="deleteQuestion(i)">Delete</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+const { createApp, reactive, ref } = Vue;
+
+createApp({
+    setup(){
+        const showMessage = ref(false);
+        const correctIndex = ref(null);
+
+        const form = reactive({
+            subject_code: '',
+            subject_name: '',
+            subject_status: 'draft',
+            year_id: '1',
+            question_text: '',
+            score: 1,
+            question_type: 'mcq',
+            is_mandatory: '1',
+            question_status: 'draft',
+            created_by: 1,
+            options: [
+                {id: Date.now() + 'a', text:''},
+                {id: Date.now() + 'b', text:''}
+            ]
+        });
+
+        const questionList = reactive([]);
+
+        function addOption(){
+            form.options.push({id: Date.now() + Math.random(), text:''});
+        }
+
+        function removeOption(index){
+            form.options.splice(index,1);
+        }
+
+        function submitForm(){
+            if(form.options.length < 2){
+                alert('At least 2 options required.');
+                return;
+            }
+            if(correctIndex.value === null){
+                alert('Select correct answer.');
+                return;
+            }
+
+            const optionsData = form.options.map((opt, idx) => ({
+                order: idx+1,
+                text: opt.text,
+                is_correct: idx === correctIndex.value ? 1 : 0
+            }));
+
+            const newQuestion = {...form, options: optionsData};
+            questionList.push(newQuestion);
+
+            showMessage.value = true;
+        }
+
+        function resetForm(){
+            form.subject_code = '';
+            form.subject_name = '';
+            form.subject_status = 'draft';
+            form.year_id = '1';
+            form.question_text = '';
+            form.score = 1;
+            form.question_type = 'mcq';
+            form.is_mandatory = '1';
+            form.question_status = 'draft';
+            form.options = [
+                {id: Date.now() + 'a', text:''},
+                {id: Date.now() + 'b', text:''}
+            ];
+            correctIndex.value = null;
+            showMessage.value = false;
+        }
+
+        function editQuestion(index){
+            const q = questionList[index];
+            form.subject_code = q.subject_code;
+            form.subject_name = q.subject_name;
+            form.subject_status = q.subject_status;
+            form.year_id = q.year_id;
+            form.question_text = q.question_text;
+            form.score = q.score;
+            form.question_type = q.question_type;
+            form.is_mandatory = q.is_mandatory;
+            form.question_status = q.question_status;
+            form.options = q.options.map(opt => ({id: Date.now() + Math.random(), text: opt.text}));
+            correctIndex.value = q.options.findIndex(opt => opt.is_correct === 1);
+
+            // remove old question
+            questionList.splice(index,1);
+            showMessage.value = false;
+        }
+
+        function deleteQuestion(index){
+            if(confirm('Are you sure to delete this question?')){
+                questionList.splice(index,1);
+            }
+        }
+
+        return { form, addOption, removeOption, submitForm, questionList, editQuestion, deleteQuestion, showMessage, resetForm, correctIndex };
+    }
+}).mount('#app');
+</script>
+
+</body>
+</html>
