@@ -1,403 +1,922 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>EMS - Create Question</title>
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EMS – bank with search + refined UI</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
-      body {
-        font-family: Arial;
-        background: #f4f6f9;
-        margin: 0;
-      }
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            background: #eef2f7;
+        }
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
 
-      header {
-        background: #1e3a8a;
-        color: white;
-        padding: 15px 25px;
-        font-size: 18px;
-      }
+        .app-container {
+            width: 1500px;              /* slightly wider for comfort */
+            max-width: 98vw;
+            height: 96vh;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
 
-      .container {
-        width: 90%;
-        margin: 25px auto;
-        background: white;
-        padding: 25px;
-        border-radius: 8px;
-        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-      }
+        /* ===== HEADER (unchanged, fine) ===== */
+        .ems-header {
+            background: linear-gradient(135deg, #0a2a5e 0%, #123e7c 100%);
+            border-radius: 50px;
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 12px 24px rgba(0, 25, 70, 0.4);
+            flex-shrink: 0;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .ems-icon {
+            background: #ffcd6b;
+            border-radius: 50px;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .ems-title h1 {
+            color: white;
+            font-size: 1.7rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+        .ems-title .sub {
+            color: #b6d0f0;
+            font-size: 0.85rem;
+        }
+        .header-right {
+            background: rgba(255,255,255,0.15);
+            padding: 8px 24px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .create-btn, .import-btn {
+            border: none;
+            font-weight: 700;
+            padding: 8px 22px;
+            border-radius: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+            transition: 0.1s;
+        }
+        .create-btn {
+            background: #ffcd6b;
+            color: #0a2a5e;
+        }
+        .create-btn:hover {
+            background: #ffdb8e;
+        }
+        .import-btn {
+            background: #ffffff;
+            color: #0a2a5e;
+        }
+        .import-btn:hover {
+            background: #eef5ff;
+        }
 
-      h3 {
-        border-left: 4px solid #1e3a8a;
-        padding-left: 10px;
-        color: #1e3a8a;
-      }
+        /* ===== QUESTION BANK (refined, with search) ===== */
+        .bank-fullpage {
+            background: white;
+            border-radius: 48px;
+            box-shadow: 0 24px 48px -16px rgba(0, 25, 60, 0.3);
+            display: flex;
+            flex-direction: column;
+            padding: 28px 36px;
+            flex: 1;
+            overflow: hidden;
+        }
 
-      .row {
-        display: flex;
-        gap: 20px;
-        margin-bottom: 15px;
-      }
+        .bank-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            flex-shrink: 0;
+        }
+        .bank-header h2 {
+            font-size: 2rem;
+            font-weight: 650;
+            color: #0b2f66;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .count-badge {
+            background: #e2eaf8;
+            color: #1f3f77;
+            border-radius: 60px;
+            padding: 8px 28px;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
 
-      .col {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-      }
+        /* search bar with button */
+        .search-section {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-shrink: 0;
+        }
+        .search-wrapper {
+            flex: 1;
+            position: relative;
+            display: flex;
+            gap: 8px;
+        }
+        .search-icon {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #7f9bc0;
+            font-size: 1.2rem;
+            pointer-events: none;
+        }
+        .search-input {
+            width: 100%;
+            padding: 14px 24px 14px 54px;
+            border: 2px solid #dbe3f0;
+            border-radius: 60px;
+            font-size: 1rem;
+            outline: none;
+            background: #f9fcff;
+            transition: 0.1s;
+        }
+        .search-input:focus {
+            border-color: #1e4a8b;
+            box-shadow: 0 0 0 4px rgba(30,74,139,0.15);
+        }
+        .search-button {
+            background: #1e4a8b;
+            border: none;
+            border-radius: 60px;
+            padding: 0 32px;
+            font-weight: 700;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+            transition: 0.1s;
+            white-space: nowrap;
+        }
+        .search-button:hover {
+            background: #0b2f66;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(30,74,139,0.3);
+        }
+        .search-button:active {
+            transform: translateY(0);
+        }
+        .clear-search {
+            background: #eef2f7;
+            border: none;
+            border-radius: 40px;
+            padding: 8px 24px;
+            font-weight: 600;
+            color: #2f4b78;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .clear-search:hover {
+            background: #dfe8f2;
+        }
 
-      input,
-      select,
-      textarea {
-        padding: 8px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-      }
+        .bank-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
 
-      textarea {
-        resize: vertical;
-      }
+        /* expandable bank items (refined) */
+        .bank-item {
+            background: #f5faff;
+            border-radius: 60px;
+            padding: 18px 28px;
+            margin-bottom: 18px;
+            border-left: 8px solid #1e4a8b;
+            transition: 0.1s;
+            box-shadow: 0 4px 12px rgba(0,20,40,0.05);
+        }
+        .bank-item:hover {
+            background: #f0f8ff;
+        }
+        .bank-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+        .bank-question-preview {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #0a2a5e;
+            flex: 1;
+            padding-right: 20px;
+        }
+        .expand-icon {
+            font-size: 1.8rem;
+            color: #1e4a8b;
+            margin-right: 16px;
+            width: 32px;
+            text-align: center;
+        }
+        .bank-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .bank-action-btn {
+            background: white;
+            border: 1px solid #b5cbe3;
+            border-radius: 40px;
+            padding: 8px 20px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .bank-action-btn.edit:hover {
+            background: #e0edff;
+        }
+        .bank-action-btn.delete:hover {
+            background: #ffe8e8;
+            border-color: #dc8686;
+        }
 
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 10px;
-      }
+        .bank-detail {
+            margin-top: 24px;
+            padding-top: 18px;
+            border-top: 2px dashed #c7d9f0;
+        }
+        .bank-full-question {
+            font-size: 1.15rem;
+            background: white;
+            border-radius: 60px;
+            padding: 20px 28px;
+            margin-bottom: 20px;
+            font-weight: 500;
+            line-height: 1.5;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.02);
+        }
+        .bank-options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin: 20px 0;
+        }
+        .bank-option {
+            background: white;
+            border-radius: 50px;
+            padding: 14px 24px;
+            border: 1px solid #c7d9f0;
+            font-size: 1.05rem;
+        }
+        .bank-option.correct {
+            background: #e6ffed;
+            border-color: #1e8f4a;
+            font-weight: 600;
+            position: relative;
+        }
+        .bank-option.correct::after {
+            content: " ✓";
+            color: #1e8f4a;
+            font-weight: 700;
+        }
+        .bank-meta {
+            display: flex;
+            gap: 24px;
+            font-size: 1rem;
+            color: #2f4b78;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            background: #eaf1fb;
+            padding: 12px 24px;
+            border-radius: 60px;
+        }
+        .bank-meta span {
+            background: white;
+            padding: 4px 24px;
+            border-radius: 40px;
+        }
 
-      th,
-      td {
-        border: 1px solid #ddd;
-        padding: 8px;
-      }
+        .empty-placeholder {
+            background: #f2f6fd;
+            border-radius: 60px;
+            padding: 50px;
+            text-align: center;
+            color: #5d7aa5;
+            font-size: 1.2rem;
+        }
 
-      th {
-        background: #f1f1f1;
-      }
-
-      button {
-        padding: 8px 12px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-weight: bold;
-      }
-
-      .btn-add {
-        background: #6b7280;
-        color: white;
-      }
-      .btn-save {
-        background: #16a34a;
-        color: white;
-      }
-      .btn-remove {
-        background: #dc2626;
-        color: white;
-      }
-
-      .save-area {
-        text-align: center;
-        margin-top: 30px;
-      }
-
-      #saveMessage {
-        text-align: center;
-        margin-top: 50px;
-      }
-
-      #saveMessage button {
-        margin: 10px;
-        padding: 8px 15px;
-        background: #1e3a8a;
-        color: white;
-      }
+        /* ===== MODAL styles (builder, option, import) - unchanged ===== */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 20, 50, 0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-card {
+            background: white;
+            border-radius: 60px;
+            width: 900px;
+            max-width: 95vw;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            padding: 32px 40px;
+            box-shadow: 0 50px 80px rgba(0, 25, 70, 0.6);
+        }
+        .modal-card h3 {
+            font-size: 2rem;
+            font-weight: 650;
+            color: #0b2f66;
+            margin-bottom: 20px;
+            flex-shrink: 0;
+        }
+        .builder-scroll {
+            overflow-y: auto;
+            padding-right: 8px;
+            flex: 1;
+        }
+        .field-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+        .field {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 160px;
+        }
+        .field label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #4d6587;
+            margin-bottom: 4px;
+        }
+        input, select, textarea {
+            background: #f9fcff;
+            border: 1.5px solid #dbe3f0;
+            border-radius: 40px;
+            padding: 9px 18px;
+            font-size: 0.95rem;
+            outline: none;
+            width: 100%;
+        }
+        .question-preview {
+            background: #f2f7ff;
+            border: 1px dashed #8ba5cf;
+            border-radius: 40px;
+            padding: 12px 20px;
+            font-size: 1rem;
+            color: #1d3a5e;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .hidden-textarea { display: none; }
+        .options-grid {
+            background: #f5f9ff;
+            border-radius: 40px;
+            padding: 20px 24px;
+        }
+        .option-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: white;
+            border-radius: 50px;
+            border: 1px solid #dfe8f3;
+            padding: 8px 20px 8px 14px;
+            margin-bottom: 12px;
+        }
+        .opt-index {
+            background: #dde5f2;
+            color: #1e3f72;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 40px;
+            font-weight: 700;
+        }
+        .opt-preview {
+            flex: 1;
+            background: #f2f7ff;
+            border: 1px dashed #8ba5cf;
+            border-radius: 40px;
+            padding: 10px 18px;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .correct-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #eaf1fb;
+            padding: 5px 18px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .btn-save {
+            background: #0b2f66;
+            color: white;
+            border: none;
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 14px 36px;
+            border-radius: 60px;
+            cursor: pointer;
+            margin: 20px 0 10px 0;
+            width: 100%;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 16px;
+            margin-top: 24px;
+            flex-shrink: 0;
+        }
+        .modal-btn {
+            border: none;
+            padding: 12px 34px;
+            border-radius: 60px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .modal-btn.cancel { background: #eef2f7; color: #2f4b78; }
+        .modal-btn.save { background: #0b2f66; color: white; }
     </style>
-  </head>
+</head>
+<body>
+    <div id="app" class="app-container">
 
-  <body>
-    <header>Examination Management System - Question Creation</header>
+        <!-- HEADER -->
+        <header class="ems-header">
+            <div class="header-left">
+                <div class="ems-icon">📋</div>
+                <div class="ems-title">
+                    <h1>Examination Management System</h1>
+                    <div class="sub">EMS · Question Bank</div>
+                </div>
+            </div>
+            <div class="header-right">
+                <span>📅 {{ currentDate }}</span>
+                <button class="create-btn" @click="openBuilderModal">
+                    <span>➕</span> Create
+                </button>
+                <button class="import-btn" @click="openImportModal">
+                    <span>📤</span> Import
+                </button>
+            </div>
+        </header>
 
-    <div class="container" id="formContainer">
-      <form id="questionForm">
-        <!-- SUBJECT -->
-        <h3>Subject (tbl_subjects)</h3>
-        <div class="row">
-          <div class="col">
-            <label>subject_code</label>
-            <input type="text" name="subject_code" required />
-          </div>
-          <div class="col">
-            <label>subject_name</label>
-            <input type="text" name="subject_name" required />
-          </div>
-          <div class="col">
-            <label>status</label>
-            <select name="subject_status">
-              <option value="draft">draft</option>
-              <option value="active">active</option>
-              <option value="inactive">inactive</option>
-              <option value="archived">archived</option>
-            </select>
-          </div>
+        <!-- QUESTION BANK with SEARCH -->
+        <div class="bank-fullpage">
+            <div class="bank-header">
+                <h2>📚 Question Bank</h2>
+                <span class="count-badge">{{ filteredList.length }} / {{ questionList.length }}</span>
+            </div>
+
+            <!-- Search bar with button -->
+            <div class="search-section">
+                <div class="search-wrapper">
+                    <span class="search-icon">🔍</span>
+                    <input class="search-input" type="text" v-model="searchQuery" @keyup.enter="performSearch" placeholder="Search questions, subjects, options...">
+                    <button class="search-button" @click="performSearch">
+                        <span>🔍</span> Search
+                    </button>
+                </div>
+                <button class="clear-search" @click="clearSearch" v-if="searchQuery">✕ Clear</button>
+            </div>
+
+            <div class="bank-scroll">
+                <div v-if="filteredList.length === 0" class="empty-placeholder">
+                    <span v-if="questionList.length === 0">No questions yet. Click "Create" to add one.</span>
+                    <span v-else>No matching questions. Try a different search.</span>
+                </div>
+                <div v-for="(q, idx) in filteredList" :key="q._uid || idx" class="bank-item">
+                    <div class="bank-item-header" @click="toggleExpand(q._uid || idx)">
+                        <span class="bank-question-preview">{{ (getOriginalIndex(q) + 1) }}. {{ q.question_text.substring(0,80) }}{{ q.question_text.length > 80 ? '…' : '' }}</span>
+                        <span class="expand-icon">{{ expandedIndex === (q._uid || idx) ? '▼' : '▶' }}</span>
+                        <div class="bank-actions" @click.stop>
+                            <button class="bank-action-btn edit" @click="editFromBank(q)">✎ Edit</button>
+                            <button class="bank-action-btn delete" @click="deleteFromBank(q)">✕ Delete</button>
+                        </div>
+                    </div>
+                    <div v-if="expandedIndex === (q._uid || idx)" class="bank-detail">
+                        <div class="bank-full-question">{{ q.question_text }}</div>
+                        <div class="bank-options-grid">
+                            <div v-for="(opt, optIdx) in q.options" :key="optIdx" 
+                                 class="bank-option" :class="{ correct: opt.is_correct === 1 }">
+                                {{ String.fromCharCode(65 + optIdx) }}. {{ opt.text }}
+                            </div>
+                        </div>
+                        <div class="bank-meta">
+                            <span>Subject: {{ q.subject_code }} - {{ q.subject_name }}</span>
+                            <span>Score: {{ q.score }}</span>
+                            <span>Type: {{ q.question_type }}</span>
+                            <span>Status: {{ q.question_status }}</span>
+                            <span>Year: {{ q.year_id }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- SUBJECT DETAIL -->
-        <h3>Subject Detail (tbl_subject_details)</h3>
-        <div class="row">
-          <div class="col">
-            <label>year_id</label>
-            <select name="year_id">
-              <option value="1">2024-2025</option>
-              <option value="2">2025-2026</option>
-            </select>
-          </div>
+        <!-- BUILDER MODAL (popup) -->
+        <div v-if="builderModalActive" class="modal-overlay" @click.self="closeBuilderModal">
+            <div class="modal-card">
+                <h3><span>✏️ {{ editingIndex !== null ? 'Edit' : 'Create' }} Question</span></h3>
+                <div class="builder-scroll">
+                    <form @submit.prevent="submitForm">
+                        <!-- form fields (same as before) -->
+                        <div class="field-row">
+                            <div class="field"><label>Code</label><input type="text" v-model="form.subject_code" placeholder="CS101" required></div>
+                            <div class="field"><label>Name</label><input type="text" v-model="form.subject_name" placeholder="Intro to CS" required></div>
+                            <div class="field"><label>Status</label><select v-model="form.subject_status"><option value="draft">draft</option><option value="active">active</option><option value="inactive">inactive</option><option value="archived">archived</option></select></div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field" style="max-width:200px;"><label>Year</label><select v-model="form.year_id"><option value="1">2024-2025</option><option value="2">2025-2026</option></select></div>
+                        </div>
+                        <div class="field">
+                            <label>Question (click to edit)</label>
+                            <div class="question-preview" :class="{ empty: !form.question_text }" @click="openQuestionModal(form, 'question')">
+                                {{ form.question_text || 'click to type question...' }}
+                            </div>
+                            <textarea v-model="form.question_text" class="hidden-textarea"></textarea>
+                        </div>
+                        <div class="field-row">
+                            <div class="field"><label>Score</label><input type="number" v-model.number="form.score"></div>
+                            <div class="field"><label>Type</label><select v-model="form.question_type"><option value="mcq">MCQ</option><option value="true_false">True/False</option></select></div>
+                            <div class="field"><label>Mandatory</label><select v-model="form.is_mandatory"><option value="1">Yes</option><option value="0">No</option></select></div>
+                            <div class="field"><label>Q.status</label><select v-model="form.question_status"><option value="draft">draft</option><option value="active">active</option><option value="inactive">inactive</option><option value="archived">archived</option></select></div>
+                        </div>
+                        <div class="options-title">🔹 4 options · click text to expand</div>
+                        <div class="options-grid">
+                            <div v-for="(opt, idx) in form.options" :key="opt.id" class="option-row">
+                                <span class="opt-index">{{ idx+1 }}</span>
+                                <div class="opt-preview" :class="{ empty: !opt.text }" @click="openModal(opt, idx)">
+                                    {{ opt.text || 'click to type...' }}
+                                </div>
+                                <label class="correct-toggle">
+                                    <input type="radio" :value="idx" v-model="correctIndex"> correct
+                                </label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-save">💾 SAVE QUESTION</button>
+                    </form>
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-btn cancel" @click="closeBuilderModal">Cancel</button>
+                </div>
+            </div>
         </div>
 
-        <!-- QUESTION -->
-        <h3>Question (tbl_questions)</h3>
-        <div class="row">
-          <div class="col">
-            <label>question_text</label>
-            <textarea name="question_text" rows="3" required></textarea>
-          </div>
+        <!-- OPTION MODAL (nested) -->
+        <div v-if="modalActive" class="modal-overlay" @click.self="closeModal">
+            <div class="modal-card" style="width:600px;">
+                <h3><span>📝 Option {{ modalIndex + 1 }}</span></h3>
+                <textarea ref="modalTextarea" v-model="modalBuffer" placeholder="Enter long option text..." rows="6"></textarea>
+                <div class="modal-actions">
+                    <button class="modal-btn cancel" @click="closeModal">Cancel</button>
+                    <button class="modal-btn save" @click="saveModal">Save text</button>
+                </div>
+            </div>
         </div>
 
-        <div class="row">
-          <div class="col">
-            <label>score</label>
-            <input type="number" name="score" value="1" />
-          </div>
-          <div class="col">
-            <label>question_type</label>
-            <select name="question_type">
-              <option value="mcq">MCQ</option>
-              <option value="true_false">True/False</option>
-            </select>
-          </div>
-          <div class="col">
-            <label>is_mandatory</label>
-            <select name="is_mandatory">
-              <option value="1">Yes</option>
-              <option value="0">No</option>
-            </select>
-          </div>
-          <div class="col">
-            <label>status</label>
-            <select name="question_status">
-              <option value="draft">draft</option>
-              <option value="active">active</option>
-              <option value="inactive">inactive</option>
-              <option value="archived">archived</option>
-            </select>
-          </div>
+        <!-- QUESTION MODAL (nested) -->
+        <div v-if="questionModalActive" class="modal-overlay" @click.self="closeQuestionModal">
+            <div class="modal-card" style="width:650px;">
+                <h3><span>📌 Question</span></h3>
+                <textarea v-model="questionModalBuffer" placeholder="Full question text" rows="6"></textarea>
+                <div class="modal-actions">
+                    <button class="modal-btn cancel" @click="closeQuestionModal">Close</button>
+                    <button v-if="questionModalTarget === 'question'" class="modal-btn save" @click="saveQuestionFromModal">Update</button>
+                </div>
+            </div>
         </div>
 
-        <input type="hidden" name="created_by" value="1" />
-
-        <!-- OPTIONS -->
-        <h3>Options (tbl_options)</h3>
-
-        <table>
-          <thead>
-            <tr>
-              <th>option_order</th>
-              <th>option_text</th>
-              <th>is_correct</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody id="optionsBody"></tbody>
-        </table>
-
-        <br />
-        <button type="button" class="btn-add" onclick="addOption()">
-          + Add Option
-        </button>
-
-        <div class="save-area">
-          <button type="button" class="btn-save" onclick="submitForm()">
-            SAVE ALL
-          </button>
+        <!-- IMPORT MODAL -->
+        <div v-if="importModalActive" class="modal-overlay" @click.self="closeImportModal">
+            <div class="modal-card">
+                <h3><span>📤 Import questions</span></h3>
+                <p style="background:#eef5fc; padding:16px; border-radius:40px;">Format: Code|Name|Year|Text|Score|Type|Mandatory|Status|Opt1|Opt2|Opt3|Opt4|CorrectIdx</p>
+                <textarea v-model="importBuffer" placeholder="Paste multiple lines..." rows="8"></textarea>
+                <div class="modal-actions">
+                    <button class="modal-btn cancel" @click="closeImportModal">Cancel</button>
+                    <button class="modal-btn save" @click="processImport">Import</button>
+                </div>
+            </div>
         </div>
-      </form>
-    </div>
 
-    <!-- Save Success Message -->
-    <div class="container" id="saveMessage" style="display: none">
-      <h2 style="color: green">✅ Question saved successfully!</h2>
-      <button onclick="addAnother()">Add Another Question</button>
-      <button onclick="viewQuestions()">View Question List</button>
-    </div>
-
-    <!-- Question List -->
-    <div class="container" id="questionListContainer" style="display: none">
-      <h3>All Questions</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Subject</th>
-            <th>Question Text</th>
-            <th>Score</th>
-            <th>Type</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="questionListBody"></tbody>
-      </table>
     </div>
 
     <script>
-      let optionIndex = 0;
-      let questionList = []; // store saved questions
+        const { createApp, reactive, ref, computed, nextTick } = Vue;
 
-      function addOption(text = "", correct = false) {
-        optionIndex++;
-        const tbody = document.getElementById("optionsBody");
+        createApp({
+            setup() {
+                const showMessage = ref(false);
+                const correctIndex = ref(null);
 
-        const row = document.createElement("tr");
-        const optionId =
-          "option_" + Date.now() + Math.floor(Math.random() * 1000);
-        row.innerHTML = `
-        <td>
-            <input type="number" name="option_order[]" value="${optionIndex}" readonly>
-        </td>
-        <td>
-            <input type="text" name="option_text[]" value="${text}" required>
-        </td>
-        <td style="text-align:center;">
-            <input type="radio" name="is_correct" value="${optionIndex}" ${correct ? "checked" : ""}>
-        </td>
-        <td>
-            <button type="button" class="btn-remove" onclick="removeOption(this)">Remove</button>
-        </td>
-    `;
-        tbody.appendChild(row);
-      }
+                // builder modal
+                const builderModalActive = ref(false);
+                const editingIndex = ref(null); // track if editing
 
-      function removeOption(btn) {
-        btn.closest("tr").remove();
-      }
+                // option modal (nested)
+                const modalActive = ref(false);
+                const modalBuffer = ref('');
+                const currentOption = ref(null);
+                const modalIndex = ref(0);
 
-      function submitForm() {
-        const form = document.getElementById("questionForm");
-        const options = document.getElementsByName("option_text[]");
-        const correct = document.querySelector(
-          "input[name='is_correct']:checked",
-        );
+                // question modal (nested)
+                const questionModalActive = ref(false);
+                const questionModalBuffer = ref('');
+                const questionModalTarget = ref('');
+                const currentQuestionRef = ref(null);
 
-        if (options.length < 2) {
-          alert("At least 2 options required.");
-          return;
-        }
+                // bank expand control
+                const expandedIndex = ref(null);
 
-        if (!correct) {
-          alert("Select correct answer.");
-          return;
-        }
+                // import modal
+                const importModalActive = ref(false);
+                const importBuffer = ref('');
 
-        // Collect form data
-        const optionsData = Array.from(options).map((opt, i) => ({
-          order: i + 1,
-          text: opt.value,
-          is_correct: i + 1 == parseInt(correct.value) ? 1 : 0,
-        }));
+                // search query
+                const searchQuery = ref('');
+                const searchActive = ref(false);
 
-        const questionData = {
-          subject_code: form.subject_code.value,
-          subject_name: form.subject_name.value,
-          subject_status: form.subject_status.value,
-          year_id: form.year_id.value,
-          question_text: form.question_text.value,
-          score: form.score.value,
-          question_type: form.question_type.value,
-          is_mandatory: form.is_mandatory.value,
-          question_status: form.question_status.value,
-          created_by: form.created_by.value,
-          options: optionsData,
-        };
+                const freshOptions = () => [
+                    { id: 'o1'+Date.now(), text: '' },
+                    { id: 'o2'+Date.now()+1, text: '' },
+                    { id: 'o3'+Date.now()+2, text: '' },
+                    { id: 'o4'+Date.now()+3, text: '' }
+                ];
 
-        // Save to local array (mock backend)
-        questionList.push(questionData);
+                const form = reactive({
+                    subject_code: '',
+                    subject_name: '',
+                    subject_status: 'draft',
+                    year_id: '1',
+                    question_text: '',
+                    score: 1,
+                    question_type: 'mcq',
+                    is_mandatory: '1',
+                    question_status: 'draft',
+                    created_by: 1,
+                    options: freshOptions()
+                });
 
-        // Show success message
-        document.getElementById("formContainer").style.display = "none";
-        document.getElementById("saveMessage").style.display = "block";
-      }
+                const questionList = reactive([]);
 
-      function addAnother() {
-        document.getElementById("questionForm").reset();
-        document.getElementById("optionsBody").innerHTML = "";
-        optionIndex = 0;
-        addOption();
-        addOption();
-        document.getElementById("saveMessage").style.display = "none";
-        document.getElementById("formContainer").style.display = "block";
-      }
+                // Add unique ID to each question for filtering/expansion
+                const addUid = (q) => {
+                    if (!q._uid) q._uid = 'q'+Date.now()+Math.random()+q.question_text.substring(0,5);
+                    return q;
+                };
 
-      function viewQuestions() {
-        const tbody = document.getElementById("questionListBody");
-        tbody.innerHTML = "";
+                // computed filtered list based on search
+                const filteredList = computed(() => {
+                    if (!searchActive.value || !searchQuery.value) return questionList.map(addUid);
+                    const query = searchQuery.value.toLowerCase();
+                    return questionList.filter(q => {
+                        const inQuestion = q.question_text.toLowerCase().includes(query);
+                        const inSubject = q.subject_code.toLowerCase().includes(query) || q.subject_name.toLowerCase().includes(query);
+                        const inOptions = q.options.some(o => o.text.toLowerCase().includes(query));
+                        return inQuestion || inSubject || inOptions;
+                    }).map(addUid);
+                });
 
-        questionList.forEach((q, index) => {
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${index + 1}</td>
-            <td>${q.subject_name}</td>
-            <td>${q.question_text}</td>
-            <td>${q.score}</td>
-            <td>${q.question_type}</td>
-            <td>${q.question_status}</td>
-            <td>
-                <button onclick="editQuestion(${index})">Edit</button>
-                <button onclick="deleteQuestion(${index})">Delete</button>
-            </td>
-        `;
-          tbody.appendChild(row);
-        });
+                // helper to get original index (for display)
+                function getOriginalIndex(q) {
+                    return questionList.findIndex(item => item._uid === q._uid);
+                }
 
-        document.getElementById("saveMessage").style.display = "none";
-        document.getElementById("formContainer").style.display = "none";
-        document.getElementById("questionListContainer").style.display =
-          "block";
-      }
+                const currentDate = new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
 
-      function editQuestion(index) {
-        const q = questionList[index];
-        const form = document.getElementById("questionForm");
+                // Search functions
+                function performSearch() {
+                    searchActive.value = true;
+                }
 
-        form.subject_code.value = q.subject_code;
-        form.subject_name.value = q.subject_name;
-        form.subject_status.value = q.subject_status;
-        form.year_id.value = q.year_id;
-        form.question_text.value = q.question_text;
-        form.score.value = q.score;
-        form.question_type.value = q.question_type;
-        form.is_mandatory.value = q.is_mandatory;
-        form.question_status.value = q.question_status;
+                function clearSearch() {
+                    searchQuery.value = '';
+                    searchActive.value = false;
+                }
 
-        // Clear and reload options
-        document.getElementById("optionsBody").innerHTML = "";
-        optionIndex = 0;
-        q.options.forEach((opt) => addOption(opt.text, opt.is_correct));
+                // Builder modal
+                function openBuilderModal() {
+                    editingIndex.value = null;
+                    form.subject_code = '';
+                    form.subject_name = '';
+                    form.subject_status = 'draft';
+                    form.year_id = '1';
+                    form.question_text = '';
+                    form.score = 1;
+                    form.question_type = 'mcq';
+                    form.is_mandatory = '1';
+                    form.question_status = 'draft';
+                    form.options = freshOptions();
+                    correctIndex.value = null;
+                    builderModalActive.value = true;
+                }
+                function closeBuilderModal() { builderModalActive.value = false; }
 
-        document.getElementById("questionListContainer").style.display = "none";
-        document.getElementById("formContainer").style.display = "block";
+                // Option modal
+                function openModal(opt, idx) {
+                    currentOption.value = opt;
+                    modalIndex.value = idx;
+                    modalBuffer.value = opt.text || '';
+                    modalActive.value = true;
+                    nextTick(() => {
+                        const ta = document.querySelector('.modal-card textarea');
+                        if (ta) ta.focus();
+                    });
+                }
+                function closeModal() { modalActive.value = false; currentOption.value = null; }
+                function saveModal() { if (currentOption.value) currentOption.value.text = modalBuffer.value; closeModal(); }
 
-        // Remove old question on save
-        questionList.splice(index, 1);
-      }
+                // Question modal
+                function openQuestionModal(source, type) {
+                    questionModalBuffer.value = source.question_text;
+                    currentQuestionRef.value = source;
+                    questionModalTarget.value = type;
+                    questionModalActive.value = true;
+                }
+                function closeQuestionModal() { questionModalActive.value = false; currentQuestionRef.value = null; }
+                function saveQuestionFromModal() {
+                    if (currentQuestionRef.value && questionModalTarget.value === 'question') {
+                        currentQuestionRef.value.question_text = questionModalBuffer.value;
+                    }
+                    closeQuestionModal();
+                }
 
-      function deleteQuestion(index) {
-        if (confirm("Are you sure to delete this question?")) {
-          questionList.splice(index, 1);
-          viewQuestions();
-        }
-      }
+                // Bank functions
+                function toggleExpand(uid) {
+                    expandedIndex.value = expandedIndex.value === uid ? null : uid;
+                }
 
-      // Add 2 default options on load
-      addOption();
-      addOption();
+                function editFromBank(q) {
+                    editingIndex.value = getOriginalIndex(q);
+                    form.subject_code = q.subject_code;
+                    form.subject_name = q.subject_name;
+                    form.subject_status = q.subject_status || 'draft';
+                    form.year_id = q.year_id;
+                    form.question_text = q.question_text;
+                    form.score = q.score;
+                    form.question_type = q.question_type;
+                    form.is_mandatory = q.is_mandatory;
+                    form.question_status = q.question_status;
+                    form.options = q.options.map(opt => ({ id: 'edit'+Math.random(), text: opt.text }));
+                    while (form.options.length < 4) form.options.push({ id: 'pad'+Math.random(), text: '' });
+                    if (form.options.length > 4) form.options = form.options.slice(0,4);
+                    correctIndex.value = q.options.findIndex(opt => opt.is_correct === 1);
+                    // remove from list (will be re-added on save)
+                    const idx = getOriginalIndex(q);
+                    if (idx !== -1) questionList.splice(idx, 1);
+                    builderModalActive.value = true;
+                }
+
+                function deleteFromBank(q) {
+                    const idx = getOriginalIndex(q);
+                    if (idx !== -1 && confirm('Delete this question?')) {
+                        questionList.splice(idx, 1);
+                        if (expandedIndex.value === q._uid) expandedIndex.value = null;
+                    }
+                }
+
+                // Import modal
+                function openImportModal() { importBuffer.value = ''; importModalActive.value = true; }
+                function closeImportModal() { importModalActive.value = false; }
+                function processImport() {
+                    const lines = importBuffer.value.split('\n').filter(l => l.trim() !== '');
+                    let importedCount = 0;
+                    for (let line of lines) {
+                        const parts = line.split('|').map(s => s.trim());
+                        if (parts.length < 13) continue;
+                        try {
+                            const [code, name, year, qText, scoreStr, qType, mandatory, qStatus, opt1, opt2, opt3, opt4, correctIdxStr] = parts;
+                            const correctIdx = parseInt(correctIdxStr);
+                            if (isNaN(correctIdx) || correctIdx < 0 || correctIdx > 3) continue;
+                            const newQ = {
+                                subject_code: code,
+                                subject_name: name,
+                                subject_status: 'active',
+                                year_id: year,
+                                question_text: qText,
+                                score: parseFloat(scoreStr) || 1,
+                                question_type: qType,
+                                is_mandatory: mandatory,
+                                question_status: qStatus,
+                                options: [
+                                    { order:1, text:opt1, is_correct: correctIdx===0?1:0 },
+                                    { order:2, text:opt2, is_correct: correctIdx===1?1:0 },
+                                    { order:3, text:opt3, is_correct: correctIdx===2?1:0 },
+                                    { order:4, text:opt4, is_correct: correctIdx===3?1:0 }
+                                ]
+                            };
+                            questionList.push(newQ);
+                            importedCount++;
+                        } catch (e) { continue; }
+                    }
+                    closeImportModal();
+                    alert(importedCount ? `✅ Imported ${importedCount} question(s).` : 'No valid questions.');
+                }
+
+                // Submit form (save from builder)
+                function submitForm() {
+                    if (form.options.length !== 4) { alert('Exactly 4 options required'); return; }
+                    if (correctIndex.value === null || correctIndex.value < 0 || correctIndex.value > 3) {
+                        alert('Please select correct answer'); return;
+                    }
+                    if (form.options.some(o => o.text.trim() === '')) {
+                        alert('All four options must have text'); return;
+                    }
+                    if (!form.subject_code || !form.subject_name || !form.question_text) {
+                        alert('Fill subject code, name and question'); return;
+                    }
+
+                    const savedOptions = form.options.map((opt, idx) => ({
+                        order: idx+1,
+                        text: opt.text,
+                        is_correct: idx === correctIndex.value ? 1 : 0
+                    }));
+
+                    const newQ = {
+                        subject_code: form.subject_code,
+                        subject_name: form.subject_name,
+                        subject_status: form.subject_status,
+                        year_id: form.year_id,
+                        question_text: form.question_text,
+                        score: form.score,
+                        question_type: form.question_type,
+                        is_mandatory: form.is_mandatory,
+                        question_status: form.question_status,
+                        options: savedOptions
+                    };
+                    questionList.push(newQ);
+                    closeBuilderModal();
+                }
+
+                return {
+                    form, correctIndex, questionList, currentDate, searchQuery, filteredList, searchActive,
+                    builderModalActive, openBuilderModal, closeBuilderModal,
+                    modalActive, modalBuffer, modalIndex, openModal, closeModal, saveModal,
+                    questionModalActive, questionModalBuffer, questionModalTarget,
+                    openQuestionModal, closeQuestionModal, saveQuestionFromModal,
+                    expandedIndex, toggleExpand, editFromBank, deleteFromBank, getOriginalIndex,
+                    importModalActive, importBuffer, openImportModal, closeImportModal, processImport,
+                    submitForm, performSearch, clearSearch
+                };
+            }
+        }).mount('#app');
     </script>
-  </body>
+</body>
 </html>
